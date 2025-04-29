@@ -1,0 +1,296 @@
+day 1:
+
+vm
+RHEL
+-rhel developer (free)
+-centos
+-rocky linux
+-alma linux
+-oracle linux
+--------------------------------------------
+
+new:
+-no partitions
+-allow root ssh
+-simple password
+-"name"
+-date/time (asia manila)
+-software installation (server with gui)
+
+oracle vbox (rctrl)
+
+-----------------------------------------------------------------------
+
+post installation tasks:
+1. vbox/vmware - network settings
+NAT -> bridged
+
+2. login -> setup (location? connect online?) skip
+3. internet connection (bridged / nat)
+4. check repositories (EPEL) 
+install and enable epel
+sudo dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
+
+5. sudo dnf update -y
+6. restart
+
+--------------------------------------------------------------------
+
+repositories
+-files (list of sources)
+-3 common sources
+default (appstream / baseos)
+epel (extra packages)
+"local repo" -> iso
+
+*unofficial source (add custom / 3rd repo)
+
+/etc/yum.repos.d/
+
+repo => yum / dnf
+
+---------------------------------------------------------------
+
+connecting to linux:
+1. directly
+2. remotely
+
+full control
+ssh (port 21):
+user (allowed to ssh)
+password
+
+
+cockpit (9090):
+web-based gui remote control
+
+sudo dnf install cockpit
+sudo systemctl start cockpit.socket
+sudo systemctl enable cockpit.socket
+sudo firewall-cmd --add-port=9090/tcp --permanent
+sudo firewall-cmd --reload
+
+browser
+https://ip:9090
+
+rhel -> mostly shipped with cockpit
+debian -> no cockpit by default
+
+
+xrdp = remote desktop
+
+
+------------------------------------------------------------------------
+
+training (directly,ssh,cockpit)
+
+check stats linux
+1. kernel version
+uname -r
+
+2. cat /etc/os-release
+cat /etc/os-release
+
+3. repos
+dnf repolist		#enabled repos
+dnf reposlist all	#all repos
+/etc/yum.repos.d	#location for repo files
+
+4. services
+systemctl list-units --type=service
+systemctl list-units --type=service --all
+
+service (sshd) -> process (sshd) (resources) -> top
+
+5. processes
+
+ps aux
+top
+htop (dnf install htop)
+
+6. users
+who
+whoami	
+cat /etc/passwd			# all users
+sudo cat /etc/shadow		# user passwords
+
+7. firewall rules
+sudo firewall-cmd --state
+sudo firewall-cmd --list-all	# gets zones and port
+sudo firewall-cmd --get-zones
+sudo firewall-cmd --zone=home --list-all
+
+firewall
+-zones
+
+z1 (inside) 9090, 21, 22	<- enable / disable
+z2 (client) 80, 443, 5432
+
+-when setting (add-port / add-service) -> public
+---------------------------------------------------------------
+
+create vm snapshot
+
+---------------------------------------------------------------
+
+1. install (software install) -> gui / no gui
+2. post-installation tasks (epel, update, connect to linux SSH & Cockpit)
+
+ssh
+- service (sshd)
+- user(s) for ssh
+
+config
+sudo nano /etc/ssh/sshd.config
+
+-port
+-maxsessions
+-AllowUsers / DenyUsers
+-AllowGroups / DenyGroups
+-PermitRootLogin (yes/no)
+
+-------------------------------------------------------------
+
+Boot up:
+
+BIOS MBR (Legacy)
+-legacy servers
+
+UEFI GPT (Modern)
+-performance + security + features
+
+ON
+->BIOS / UEFI (firmware for hardware)
+->drive (locate bootloader), bootloader (MBR/GPT)
+->GRUB (kernel / tshoot)
+->kernel + initramfs (distro + systemd + resource mgmt + etc)
+->systemd -> services + processes
+
+example:
+reset root password
+1. grub (press e)
+2. go to "linux" line, add "rd.break" at the end
+3. ctrl + x
+4. mount -o remount rw /sysroot
+5. chroot /sysroot
+6. passwd
+7. touch /.autorelabel
+8. exit
+9. exit
+10. reboot normally
+
+kernel------>systemd (filesystem)
+linux5.5-----> /sysroot
+linux5.5.1-----> /sysroot
+linux5.5.2-----> /sysroot
+linux5.5.3-----> /sysroot
+
+---------------------------------------------------------------
+
+Intro to SELinux
+- change of mode
+- enforcing(high), permissive(modified), disabled(no selinux)
+
+getenforce	# show status of selinux
+sudo nano /etc/selinux/config
+
+permissive | enforcing | disabled
+
+- restart all services
+systemctl reboot
+
+- todo: set selinux to disabled
+
+----------------------------------------------------------------------
+
+Users, Groups and File Management
+
+groups:
+1. user <-> group
+2. groupid =/= uid (not always)
+3. useradd (specify group membership upon creation)
+
+sudo useradd -G group1 user12
+sudo useradd -G group1 -u 8000 user14
+
+example scenario:
+exec 2000-2999
+emp 10000+
+
+4. usermod (member to group)
+
+# add user to group
+sudo usermod -a -G group1 user10
+
+# add user to group
+sudo gpasswd -a username groupname
+
+# remove user from group
+sudo gpasswd -d username groupname
+
+# group delete
+sudo groupdel group1
+
+--------------------------------------------------------
+
+user management
+
+useradd roy
+useradd -u 7001 roy
+useradd -G group1 roy
+
+user defaults:
+/etc/defaults/useradd		# create user (home dir, uid, shell)
+/etc/login.defs			# create user (pass exp, others-lock,etc)
+
+userdel roy		# deletes user, leaves home dir
+userdel -r roy		# delete user and home dir
+userdel -r -f roy	# delete user and home dir forcefully
+
+user login restrictions:
+-lock
+
+# status
+sudo passwd -S kevin
+PS	password set (unlocked)
+LK	locked
+NP	no password
+
+sudo passwd -l kevin
+sudo passwd -u kevin
+
+sudo usermod -L lala
+sudo usermod -U lala
+
+-expire passwords
+
+#Interactive
+chage -l kevin		# account password expire for kevin
+chage -M 30 -W 6 kevin	# M=maxdays, m=mindays,W=warndays
+
+-------------------------------------------------------------------------
+
+add user to sudoers:
+
+# option 1: edit sudoers file (effect immediate)
+sudo nano /etc/sudoers
+
+# add
+kevin	ALL=(ALL)	ALL
+%group1	ALL=(ALL)	ALL
+
+# option 2: edit "wheel" group (require to re-login)
+sudo usermod -aG wheel kevin
+sudo gpasswd -a kevin wheel 
+
+
+
+
+
+
+
+
+
+
+
+

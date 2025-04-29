@@ -1,0 +1,340 @@
+File Management
+
+1. folders = file
+2. files (no file extension)
+3. shortcuts = hard links / soft links
+
+activities:
+1. permission
+2. change ownership
+3. resizing
+4. archiving
+5. file operation
+
+------------------------------------------------------
+# create file
+touch filename
+<command with output> > <file>
+<command with output> >> <file>
+truncate -s 15M file2.txt
+
+# copy
+cp src dest
+cp file1.txt folder1
+cp *.txt folder1
+cp file* folder1
+cp file*.txt folder1
+cp *.* folder1
+cp * folder1
+cp *file* folder1
+
+# rm
+rm <options> <filename>
+-r 	folder
+-f	force
+-i 	confirmation
+
+# mv (rename)
+
+-----------------------------------------------------------------
+
+# read files
+cat
+head	# first few lines
+tail	# last few lines
+
+# stream to file and display to terminal
+ls -l | tee myfiles.txt
+ls -l | tee -a myfiles.txt
+
+# create links
+# hard links (inode)
+
+-sync
+-delete og file1, hard link is still accessible
+
+file1.txt 	-hard->		newfile1.txt
+
+
+# soft links (file)
+
+-sync
+-delete og file, "dangling shortcut"
+
+file1.txt 	-hard->		newfile1.txt
+
+# create
+ln file1.txt file1link.txt
+ln -s file1.txt file1link.txt
+
+# hard link
+file1-----------> inode (contents) <---------file1hardlink 
+
+# check inode
+ls -i
+
+# check no. hard link in a file
+stat filename
+
+
+# soft link / symbolic link
+file1-----------> inode (contents)
+|
+|
+file1softlink
+
+------------------------------------------------------------
+windows: zip / rar / 7z
+
+
+Archiving (multi files --> 1 file) + compression
+tar					gunzip / bunzip2
+
+# options
+c	create
+v	verbose
+f	filename
+x	extract
+r	add file
+t	view contents
+
+# create archive
+tar -cvf set1.tar f1 f2 f3 /tmp/f4 
+tar -cvf set1.tar *.txt 
+
+# view contents
+tar -tvf set1.tar
+
+# extract
+tar -xvf set1.tar -C /tmp/extracted
+
+# gunzip (gz)
+z
+tar -czvf archive2.tar.gz f1 f2 f3
+
+# bunzip2 (bz2)
+j
+tar -cjvf archive2.tar.bz2 f1 f2 f3
+
+J
+tar -cJvf archive2.tar.xz f1 f2 f3
+
+
+
+--------------------------------------------------------------------------
+
+file and folder permission
+
+[type] [owner][group][others]
+-rwxr-xr-x
+
+numeric mode
+read 4
+write 2
+execute 1
+
+755
+
+full permission
+777
+
+full for owner
+700
+
+full permission for docs (not exe)
+666
+-----------------------------------------
+
+symbolic
+chmod u+rwx file1
+chmod g+rwx file1
+chmod o+rwx file1
+
+chmod [target][+-][permission] [file]
+
+target ugo 
+permissions rwx
+
+chmod u+rwx file1
+chmod ug+rwx file1
+----------------------------
+u + x
+g - x
+0 + w, -x
+
+chmod ug+x????
+chmod 745
+chown <username> filename
+chown <group> filename
+----------------------------------------------------
+
+file access control list (ACL)
+john rw
+kevin r
+lala rx
+lolo rwx
+
+# check acl 
+getfacl file3
+
+# set user/group acl
+setfacl -m u:kevin:rw file3
+setfacl -m g:group1:rw file3
+
+# !options to track / audit
+1. stat file3 (last time accessed)
+2. history of commands
+3. last command
+4. audit service (auditd) monitor file/folder
+
+# remove user / group acl
+setfacl -x u:lala file3
+
+# remove acl (revert to basic permissions)
+setfacl -b file3
+
+---------------------------------------------------------------------
+
+package management
+
+package / application / tools
+1. local source (iso, rpm file, local repository)
+
+path to repository
+rhel yum/dnf
+debain apt/apt-get
+
+launch file (installer)
+rhel rpm (.rpm)
+debian dpkg (.deb)
+
+-----------------------------------------------------------
+
+rhel
+
+dnf: 
+install
+remove
+repolist
+search
+update
+upgrade
+clean all
+info
+list			# list all packages that can be installed (+ repo)
+
+dnf list | grep "nginx"
+
+list installed
+
+------------------------------------------------------------
+
+dnf info nginx (vendor url)
+dnf install nginx
+dnf list installed | grep "nginx"
+dnf remove nginx
+
+----------------------------
+scp
+
+putty (pscp)
+windscp
+
+
+scp (openssh)
+scp C:\..\..\htop.rpm john@192.168.254.188:/home/john
+
+install rpm file
+sudo rpm -ivh app.rpm
+i install
+v verbose
+h prints hash (after install
+
+remove installed rpm file
+sudo rpm -ev app.rpm
+
+or
+dnf remove appname
+
+-----------------------------------------------------
+
+from repo (online)
+dnf install <package>
+
+rpm (installer)
+sources:
+	1. vendor/dev site
+	2. yumdownloader <package>
+	3. dnf download <package>
+
+install:
+rpm -iv app.rpm		#install
+rpm -U app.rpm		#update
+rpm -e app.rpm		#remove
+
+dnf localinstall app.rpm	#install	
+
+---------------------------------------------------------------------
+
+service
+1. service = 1 or more process
+2. management
+
+systemctl list-units --type=service
+systemctl list-units --type=service | nginx
+systemctl list-units --type=service --state=running
+ls -l /usr/lib/systemd/system/
+
+systemctl stop service
+systemctl start service
+systemctl restart service
+systemctl enable service
+systemctl disable service
+systemctl status <pid>
+
+
+example:
+nginx (web server: 80/http)
+1. install
+2. running service
+3. services (app can accessed remotely), open ports!
+
+firewall management commands
+rhel firewall-cmd
+debian ufw
+
+firewall-cmd --state
+systemctl stop firewalld
+firewall-cmd --reload
+firewall-cmd --get-zones
+firewall-cmd --list-all --zone=work	#show rules on a specific zone
+firewall-cmd --add-port=80/tcp --zone=work --permanent
+firewall-cmd --remove-port=80/tcp --zone=work --permanent
+firewall-cmd --add-service=http --permanent
+
+http://192.168.254.188
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
