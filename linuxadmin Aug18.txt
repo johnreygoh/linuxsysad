@@ -1,0 +1,292 @@
+Training Lab
+1-2 Virtual Machines (Linux)
+
+1. on-prem virt (VirtualBox/VMWare)
+2. azure / aws / gcp
+------------------------------------------
+
+1. Oracle VirtualBox
+2. Linux (ISO)
+
+RHEL (red hat enterprise linux)
+*Red hat 
+-developer (full) , iso small -> update (big)
+-centos
+-oracle linux (will use this)
+-rocky linux
+-almalinux
+
+3. 16GB ram, 100GB space (40-50GB)
+
+VM specs:
+4gb ram
+40GB storage
+
+-server with GUI
+-root password 
+-partitioning (auto)
+-Name / User Name (ex. JOJO, [/] allow ssh login)
+
+Post-Install Tasks:
+1.power options
+2.network
+3.update
+sudo dnf update -y
+
+4.*create snapshot
+
+--------------------------------------------------------
+vbox:
+1. r.ctrl (move pointer out)
+2. r.ctrl + f (full screen)
+
+-----------------------------------------------
+Basic Admin Commands:
+//checking kernel versions
+//linux -> kernel 5.15 -> rhel 9.6 -> oraclelinux 9.6
+uname -r
+
+//get working directory
+pwd
+
+//distro version
+cat /etc/os-release
+cat /etc/redhat-release
+
+// within distro
+
+// repositories: location where your distro downloads apps
+// vendor specific
+oracle linux = oracle linux repo
+dnf repolist
+dnf repolist all
+dnf repository-packages <repo name> list
+dnf repository-packages ol9_appstream list
+dnf repository-packages ol9_appstream list | grep "nginx"
+
+//services
+systemctl list-units --type=service		//active
+systemctl list-units --type=service --all	//active&inactive
+system status <name of service>
+
+poweroff
+reboot
+
+package (App)
+-service (pid), killable using proc management/service management
+
+
+//process
+ps aux		//list all process from all users
+top
+
+//users
+cat /etc/passwd
+cat /etc/group
+
+//firewall
+firewall-cmd --state			//check firewall stat
+firewall-cmd --get-zones		//firewall->zones
+firewall-cmd --list-all			//all rules
+firewall-cmd --zone=home --list-all	//all rules for a zone
+
+-----------------------------------------------------
+
+Administrate Linux Machine
+1. physical / direct
+2. remotely (ssh)
+-access to terminal
+
+basic SSH (user allowed to ssh)
+steps:
+1. user? add / select
+root
+john
+
+2. ssh service is running (sshd)
+systemctl status sshd
+systemctl start sshd
+systemctl stop sshd
+systemctl enable sshd
+systemctl disable sshd
+systemctl restart sshd
+
+3. firewall allows sshd
+sudo firewall-cmd --add-service=ssh --permanent
+sudo firewall-cmd --add-port=22/tcp --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all --zone=public
+
+4. check ssh config /etc/ssh/sshd_config
+sudo nano /etc/ssh/sshd_config
+sudo vim /etc/ssh/sshd_config
+
+//allow ssh user
+AllowUsers cristel
+
+5. *allow users to ssh
+add them to wheel group
+
+6. test ssh
+windows:
+ssh john@hostname
+ssh john@ipAddress
+ssh john@192.168.254.197
+
+-----------------------------------------------------------
+
+cockpit (remote web-based)
+1. update
+sudo dnf update -y
+
+2. install cockpit
+sudo dnf install cockpit -y
+
+3. check and start cockpit
+systemctl status cockpit
+sudo systemctl start cockpit
+
+4. firewall 
+sudo firewall-cmd --add-service=cockpit --permanent
+sudo firewall-cmd --add-port=9090/tcp --permanent
+sudo firewall-cmd --reload
+
+5. access cockpit
+browser:
+http://hostname:9090
+http://ip:9090
+
+-------------------------------------------------------------
+
+basic commands for checking system:
+hostname		//check hostname
+uptime			//how long server is running
+ip a			//check ip config
+ifconfig
+lscpu			//check cpu info
+free -h			//ram usage
+df -h			//hard disk usage capacity
+lsblk			//hdd usage and partitions
+
+--------------------------------------------------------------
+
+Repository Management
+
+package sources:
+1. official vendor repo
+*risk of varying contained package
+*version compat
+ex:
+OL9 + OL9repo (all packages in this repo tested in OL9)
+*RHEL (RedHat)
+free = repo free (limited)
+developer = repo for developer
+
+2. Extra Packages for Enterpise Linux (EPEL)
+ORACLE
+-official vendor repo
+-oracle epel
+
+oracle 7:
+sudo dnf install oracle-epel-release-el7
+
+oracle 9:
+sudo dnf install oracle-epel-release-el9
+
+//enable or disable repo
+sudo dnf config-manager --enable ol9_developer_EPEL
+sudo dnf config-manager --disable ol9_developer_EPEL
+
+
+3. download rpm files (installer)
+*debian based distro (debian,ubuntu) = .deb
+*rhel based distro (rhel,centos,OL) = .rpm
+
+-> internet (.rpm / .deb), dependencies?
+-> get rpm file (and dependencies) from another machine
+
+linux server(online) -> step (approve/checking) -> linux server (offline)
+-get packs 					  -install
+
+
+a. download .rpm from official repos using dnf/yum
+
+// download htop (.rpm), exlcuding dependencies, on the curr dir
+sudo dnf download htop 
+
+// download pack (.rpm), including dependencies, on curr dir
+sudo dnf download htop --resolve
+
+// transfer files
+
+// install single rpm
+sudo rpm -ivh /tmp/package.rpm
+
+// multi rpm
+sudo rpm -Uvh /folder/*.rpm
+
+---------------------------------------------
+Package Management
+deb:
+apt-get
+apt
+sudo apt install htop
+
+rhel:
+yum
+dnf
+sudo yum install htop
+sudo dnf install htop
+
+dnf install pack
+dnf remove pack
+dnf autoremove pack			// remove + clean + purge
+dnf repolist
+dnf repolist all|enabled|disabled
+dnf update				//update all packages
+dnf update pack				//update specific pack
+dnf search pack				//shows some info on packs
+dnf clean all				//cleans package cache
+dnf info pack
+
+*install .rpm
+sudo rpm -Uvh *.rpm
+
+*install .rpm using dnf/yum
+sudo dnf install /downloads/htop/*.rpm
+
+--------------------------------------------------
+
+// rename hostname
+hostname
+hostnamectl
+sudo hostnamectl set-hostname johnlinux1
+
+---------------------------------------------------
+
+*create snapshot (end of day1)
+
+
+To do: 
++1 Oracle Linux 7/8/9/10
+4096GB ram
+40GB storage
+1-2 vcpu
+bridged adapter
+update
+
+*if clone:
+diff mac address
+diff hostnames
+
+
+
+
+
+
+
+
+
+
+
+

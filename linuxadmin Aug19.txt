@@ -1,0 +1,278 @@
+basic commands checking and monitoring
+service management
+repository and package management
+-----------------------------------------------
+
+lpic
+comptia linux+
+rhel
+-----------------------------------------------
+
+users and groups management
+
+//show users
+cat /etc/passwd
+head <file>
+tail <file>
+cat /etc/passwd | grep "john"
+
+//show groups
+cat /etc/group
+
+//manage user
+sudo useradd <username>		//create
+sudo useradd <username> 
+	-u 2000
+	-d /tmp/secretuser
+	-m
+
+
+sudo passwd <username>		//set password
+su <username>			//switch user
+exit				//logout user
+
+$ = normal user
+# = root / superuser / superadmin
+
+sudo userdel <username>		//normal del
+sudo userdel -f <username>	//force del
+sudo userdel -r <username>	//delete with home folder
+
+-----------------------------------------------------------
+
+//managing groups
+
+cat /etc/groups
+sudo groupadd remoteadmins
+sudo usermod -aG remoteadmins user1
+groups <user>			//checks the groups a user belongs to
+sudo usermod -G group1,group2,group3 user1 //overwrites group listings
+sudo gpasswd -d user1 group2	//delete user from group
+sudo gpasswd -a user1 group3	//add user to group
+
+--------------------------------------------------------------------
+
+file management
+folders/directories = files
+
+//create file
+touch file1
+echo "test" > file2
+nano file3
+
+//edit
+database.config
+sudo nano /var/database.confg
+
+//make folder
+mkdir folder1
+
+//create subfolders and parent folders
+folder1
+-sub1
+	-sub2
+		-sub3
+
+mkdir -p ./folder1/sub1/sub2/sub3
+
+// navigate
+ls	//see contents
+ls -l	//shows permissions, type, size, owner + group
+cd ~ 	//goes into home directory
+ch /	//root
+pwd	//showing current location (file/folder)
+
+cp source destination
+cp source destination/newfilename
+mv source destination
+mv source destination/newfilename
+rm file
+rm -r folder1		//recursive, delete subfolders as well
+rm -rf folder1		//force delete folder and all contents
+
+// finding files
+find filename
+
+sudo updatedb		//update db for the locate command
+locate filename
+
+------------------------------------------------------
+file and folder permissions
+
+1. numeric and symbolic permission (basic)
+2. ACL Access Control Lists
+
+-----------------------------------------------------
+
+sudo (elevated command,not equiv to root)
+*primary user, auto a sudoer, part wheel group
+*other new users by default, not sudoers
+*make user part of sudoers?
+1. member of wheel
+2. modify the sudoers, "visudo"
+
+
+
+
+
+permissions
+read,write,execute
+
+
+-		// type directory,file,link
+rw-		// owner
+r--		// group
+r--		// other
+
+chmod		// change permission file or folder
+
+//numeric
+read = 4
+write = 2
+execute = 1
+all = 7
+
+chmod 777 file1
+chmod 666 file1
+
+//symbolic
+u = owner
+g = group
+o = others
+a = all
+
++/- rwx
+
+chmod g+rwx file
+chmod ug+rw file
+chmod o-r file
+
+//change ownership
+sudo chown user1:user1 file1
+sudo chgrp group1 file1
+
+-------------------------------------
+
+rw-	rw-	r--
+user1 	john 	others (u2,u3)
+		u3(read write)
+
+
+acl access control list
+user=permission=file
+
+//check acl
+getfacl file1
+
+//modify acl
+sudo setfacl -m u:user1:rwx file1
+sudo setfacl -m g:remoteadmins:rw file1
+
+//remove acl
+sudo setfacl -x u:user3 file1
+sudo setfacl -x g:remoteadmins file1
+
+---------------------------------------------------
+
+filesystem structure (review)
+
+bin	essential commands, ls, cp, cat
+boot	kernel, bootloaders
+dev	device (hard drives, usb, null)
+etc	system-wide configuration (passwd,groups,shadow,sshd_config)
+home	user home folder
+lib,lib64	shared libraries, functions
+media	"ready-to-use" mount point for removable storage (CD,DVD,USB)
+mnt	temporary mount point (folder<---partition)
+opt	optional software (3rd party apps)
+proc	virtual filesystem, process and kernel info
+root	home directory of root
+run	runtime process data (/var/run, volatile), usually for services
+sbin	system binaries for config system (shutdown,fdisk)
+srv	data for system services
+sys	virtual filesystem, devices and kernel info,stats and *config
+tmp	temporary folder (auto-delete upon reboot)
+usr	user applications and tools
+var	variable (logs,web)
+
+
+disk partitions and file system
+
+storage device (raw) -> /dev -> partition + format (filesystem) -> mount 
+
+windows:
+FAT
+NTFS
+
+linux:
+ext2 	old, no journaling, risky on crashes
+ext3	adds journaling (safer on crashes)
+ext4 	most common debian-based, debian/ubuntu
+
+xfs	def in rhel,centos,OL, journaling, large files & parallel I/O
+	(cannot shrink an xfs partition)
+
+B-Tree FS (btrfs)
+-common openSUSE,fedora
+-flexible partition (grow and shrink)
+-snapshots, compression, check data integrity
+
+
+ZFS (openZFS)
+-solaris, volume manager, high ram usage
+
+-----------------------------------------------------------------
+
+partitioning and formatting a raw drive
+
+1. list all detected drives
+lsblk
+lsblk -f
+
+2. creating new partition (fdisk,gparted(GUI))
+//select disk
+sudo fdisk /dev/sdb
+
+commands
+n - new part
+	n > p > part# > firstsector? > lastsector? +2G
+p - print part table
+w - save changes
+
+//refresh  partition list
+sudo partprobe
+
+//format partition
+sudo mkfs.ext4 /dev/sdb2
+sudo mkfs.xfs /dev/sdb1
+
+//make folder for the partitions
+sudo mkdir /mnt/partition1
+sudo mkdir /mnt/partition2
+
+//temporary mount (disconnects after reboot)
+sudo mount /dev/sdb1 /mnt/partition1
+sudo mount /dev/sdb2 /mnt/partition2
+
+df -h | grep /mnt/parti
+
+
+//permanent mount (persist across reboots)
+//edit fstab
+//note the UUID sdb
+├─sdb1   xfs                        71dc5403-0287-421e-9973-3f67252d57f0      1.9G     2% /mnt/partition1
+└─sdb2   xfs                        c2abaea0-95ec-43cd-8757-ab4ddc8a0f1f      1.9G     2% /mnt/partition2
+
+//add in fstab
+UUID=71dc5403-0287-421e-9973-3f67252d57f0 /mnt/partition1 xfs defaults 0 0
+UUID=c2abaea0-95ec-43cd-8757-ab4ddc8a0f1f /mnt/partition2 xfs defaults 0 0
+
+//reload fstab
+sudo mount -a
+
+//unmount a partition
+sudo umount /mnt/partition1
+
+
+
+
