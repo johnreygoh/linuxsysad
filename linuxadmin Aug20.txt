@@ -1,0 +1,354 @@
+partitioning and filesystem
+-check partitions
+-new/delete partitions
+-manage filesystem mkfs.xxxx
+-mount partition
+temp	sudo mount /dev/sdb1 /mnt/p1
+permanent	/etc/fstab
+
+----------------------------------------------------
+//unmount partition
+sudo umount /mnt/partition2
+lsblk
+df -h
+
+//resizing
+//*very risking
+//shrink or grow
+//ext4, can shrink or grow
+//xfs, grow only
+
+option 1: safe, long process 
+p1 (10G -> 20G)
+-backup data & transfer to p2
+-delete p1, new partition with bigger size
+-format filesystem
+-restore data back to p1
+
+option 2: resize partition and FS using cmd
+
+ex:
+sectors
+1	[2	3	4	5][6	7	8	9]	10
+
+//extend or grow xfs
+1.resize partition
+delete + new (bigger) must start from same sector
+
+2.resize filesystem
+$sudo xfs_growfs /mnt/partition2
+
+
+option 3: cfdisk
+$ sudo cfdisk /dev/sdb	-> resize
+$ sudo xfs_growfs /mnt/partition2
+df -h
+lsblk
+
+option 4: cockpit -> storage
+
+-------------------------------------------------
+
+// check and repair filesystems
+// ext4 
+sudo fsck.ext4 /dev/sdb1
+
+// xfs
+sudo xfs_repair /dev/sdb1
+
+-----------------------------------------------------
+
+// swap space
+exceed ram usage -> space in storage
+
+recommend:
+-do not modify existing swap space
+-select another partition as swap space
+
+// check swap space
+swapon --show
+swapon -s
+free -h
+
+// if changing swap partitions, turn off
+sudo swapoff -a
+
+// create swapfile
+fallocate -l 2G /mnt/partition1/swapfile
+
+//set permissions to swapfile
+sudo chmod 600 /mnt/partition1/swapfile
+
+//make it swap and enable
+sudo mkswap /mnt/partition1/swapfile
+sudo swapon /mnt/partition1/swapfile
+
+//to make it permanent, add to /etc/fstab
+/mnt/partition1/swapfile none swap sw 0 0 
+
+//remove swapfile from swap space
+sudo swapoff -a
+rm /mnt/partition1/swapfile
+nano /etc/fstab		(remove swap entry)
+
+-----------------------------------------------------------
+
+// archiving, compression, extraction
+file.tar
+file.tar.gz
+file.tar.bz2
+
+// TAR archive (multiple file -> 1 file)
+tar -cvf archive1.tar file1 file2 /folder1 data* *.txt
+tar -xvf archive1.tar
+
+// compression for archive
+// gunzip .gz
+tar -czvf archive1.tar.gz file1 file2 /folder1 data* *.txt
+tar -xzvf archive1.tar
+
+// bunzip2 .bz2
+tar -cjvf archive1.tar.bz2 file1 file2 /folder1 data* *.txt
+tar -xjvf archive1.tar
+
+--------------------------------------------------------
+
+process management
+task (service/app/script/command)
+
+// create a sample script (demo process)
+sudo nano script1.sh
+
+// run script
+sudo chmod a+x /home/john/script1.sh 
+/home/john/script1.sh
+
+// foreground and background
+// run process in background
+/home/john/script1.sh &
+
+// stop running process
+foreground = ctrl + c
+background = 
+	1. move it foreground 
+		fg %[tasknumber]
+		fg %[1]
+	2. pause process
+		ctrl + z
+	3. put it back to bacground
+		bg
+	4. kill process 
+		kill PID
+		htop
+	5. monitor running processes
+		ps aux
+
+//check jobs in background
+jobs
+
+//push running script into background
+ctrl + z
+bg
+
+-----------------------------------------------------
+
+process prioritization
+				   Fastest			slowest
+"niceness" level for each process  -20 -19 -18 ....0....1..2...19
+default = 0
+highest (most prioritized) = -20
+lowest (low priority) = 19
+
+// run a process with a given niceness level
+sudo nice -n -10 ./script1.sh
+
+// adjust niceness of a process 
+sudo renice -2 -p <PID>
+
+--------------------------------------------------------------
+
+TUNED (performance profiles)
+// managed system settings depending on environment
+
+// install
+sudo dnf install tuned
+systemctl status tuned
+sudo systemctl start tuned
+sudo systemctl enable tuned
+
+//check tuning profiles
+tuned-adm list
+
+//switch profile
+tuned-adm profile <profile name>
+
+-----------------------------------------------------
+
+Network configuration
+
+// check ip settings
+ifconfig
+ip a
+
+// config using nmcli
+//check net connections
+nmcli connection show
+
+nmcli con down enp0s3
+nmcli con mod enp0s3 ipv4.addresses 192.168.254.197/24
+nmcli con mod enp0s3 ipv4.gateway 192.168.254.254
+nmcli con mod enp0s3 ipv4.dns 8.8.8.8
+nmcli con mod enp0s3 ipv4.method manual
+nmcli con up enp0s3
+
+//nmtui
+nmtui
+
+//cockpit
+-------------------------------------------------
+cron and at
+
+// task
+sudo nano script2.sh
+
+#!/bin/bash
+echo "script2 executed on: $(date)" >> /home/john/script2.log
+
+
+//cron to sched
+//existing jobs
+crontab -l
+
+//edit crontab (to add a job)
+crontab -e
+
+//crontab structure
+//syntax
+min hour dayofmonth month dayofweek command
+
+//examples
+//run script every 5 minutes
+*/5 * * * * /home/john/script2.sh
+
+//run everyday at 2am
+0 2 * * * /home/john/script2.sh
+
+//run every Sunday at midnight
+0 0 * * 0 /home/john/script2.sh
+
+//7:30am Jan 1 Monday
+30 7 1 1 1 script2.sh
+
+//shortcuts for cron (use inside crontab)
+@reboot		run once at startup
+@hourly		0 * * * * /script
+@daily		0 0 * * * /script
+@monthly	0 0 1 * * /script
+@weekly		0 0 * * 0 /script
+
+//terminal
+@monthly /home/john/script2.sh
+
+//crond service
+systemctl status crond
+systemctl start crond
+systemctl enable crond
+systemctl restart crond
+
+// check cron jobs executed (last hour)
+journalctl -u crond --since "1 hour ago"
+
+//AT command (1-time)
+sudo dnf install at
+sudo systemctl status atd
+sudo systemctl start atd
+sudo systemctl enable atd
+
+command/script | at <time>
+
+//examples
+script2.log | at now + 10 minutes
+script2.log | at 8:00 AM tomorrow
+script2.log | at 19:00 Monday
+script2.log | at 1:00 AM December 25
+
+//check at tasks
+atq
+
+//remove at task
+atrm <job id>
+
+
+--------------------------------------------------------------------
+
+Setup samba server (file server)
+
+sudo dnf install samba samba-client samba-common samba-winbind
+
+systemctl status smb
+systemctl start smb
+systemctl enable smb
+
+sudo firewall-cmd --add-service=samba --permanent
+sudo firewall-cmd --reload
+sudo firewall-cmd --list-all
+
+// sharing of folder made in a file/config
+/etc/samba/smb.conf
+
+// backup orig config file
+sudo cp /etc/samba/smb.conf /etc/samba/smb.conf.orig
+
+// create shared folder(s)
+sudo mkdir -p /srv/samba/everyone/johnfolder
+sudo chmod 777 /srv/samba/everyone/johnfolder
+sudo chown -R nobody:nobody /srv/samba/everyone/johnfolder
+
+// add the shared folder to smb.conf
+[johnfolder]
+        comment = Shared folder
+        path = /srv/samba/everyone/johnfolder
+        browseable = yes
+        writable = yes
+        guest ok = yes
+        read only = no
+        force user = nobody
+
+
+//check samba settings
+testparm
+
+// restart samba service
+sudo systemctl restart smb
+
+// samba users
+// set samba password for your users
+sudo smbpasswd -a john
+
+//by default SELinux (remote access of services)
+getenforce
+sudo setenforce 0
+sudo setenforce 1
+
+
+//access from windows
+\\ip
+\\hostname
+
+
+
+
+servers:
+	samba server (file sharing)
+	web server
+	*NTP
+	*DHCP
+	*DNS
+	*Database
+
+
+
+
+
+
+
