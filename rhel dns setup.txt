@@ -1,0 +1,69 @@
+1. Install BIND Packages
+sudo dnf install bind bind-utils -y
+
+2. Configure the Main Settings
+
+/etc/named.conf
+
+#Change 
+listen-on port 53 { 127.0.0.1; }; 
+
+#to 
+listen-on port 53 { any; };
+
+#Change 
+allow-query { localhost; }; 
+
+#to your network range 
+allow-query { localhost; 192.168.1.0/24; };
+
+3. Define Your DNS Zones
+
+/etc/named.conf 
+
+#edit/add
+zone "example.com" IN {
+    type master;
+    file "forward.example.com"; # The name of the record file
+    allow-update { none; };
+};
+
+4. Create the Zone File
+
+sudo vi /var/named/forward.example.com
+
+#Add the records:
+$TTL 86400
+@   IN  SOA     ns1.example.com. admin.example.com. (
+        2024052001 ; Serial
+        3600       ; Refresh
+        1800       ; Retry
+        604800     ; Expire
+        86400      ; Minimum TTL
+)
+@       IN  NS      ns1.example.com.
+ns1     IN  A       192.168.1.10   ; IP of your DNS server
+web     IN  A       192.168.1.20   ; Example web server
+
+5. Set Permissions & Start Service
+# Fix permissions
+sudo chown :named /var/named/forward.example.com
+
+# Check for syntax errors
+sudo named-checkconf
+sudo named-checkzone example.com /var/named/forward.example.com
+
+# Start and enable the service
+sudo systemctl enable --now named
+
+6. Open the Firewall
+sudo firewall-cmd --permanent --add-service=dns
+sudo firewall-cmd --reload
+
+Note:
+SELinux: Both RHEL and Oracle Linux have SELinux enabled by default. 
+If you move zone files to a non-standard directory, 
+you may need to run 
+
+restorecon -Rv /path/to/directory.
+

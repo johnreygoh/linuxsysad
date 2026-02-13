@@ -1,0 +1,122 @@
+Reset Root Password
+
+1. Interrupt the Boot Menu
+In the GRUB boot menu appears (the list of kernel versions), 
+press the e key on your keyboard to edit the first boot entry.
+
+2. Modify the Boot Parameters
+Look for the line starting with linux or linux16.
+Move your cursor to the end of that line.
+Add a space and type: 
+
+rd.break
+
+Press Ctrl+X or F10 to boot with these temporary settings.
+
+3. Remount the Filesystem
+The system will boot into an "emergency mode" ramdisk. 
+At this point, your actual files are mounted as read-only under /sysroot. 
+You need to make them writable.
+
+Run the following commands:
+mount -o remount,rw /sysroot
+chroot /sysroot
+
+4. Change the Password
+Now that you are in a "chroot" environment (acting as the root of your actual disk), change the password:
+passwd root
+
+5. Fix the SELinux Context
+SELinux will block the change unless you tell it to relabel the files on the next boot.
+
+Run this command:
+touch /.autorelabel
+
+6. Exit and Reboot
+exit
+exit
+
+------------------------------------------------------------------------------------------------
+
+Repairing FSTAB errors
+
+1. Entering the Shell
+When the boot fails, you will likely see a message saying:
+"Give root password for maintenance (or press Control-D to continue):"
+
+Enter your root password. You are now in a limited shell.
+
+2. Identify the Error
+journalctl -xb | grep mount
+
+
+3. Remount the Root Partition
+By default, in emergency mode, the root filesystem is often mounted as read-only (ro). 
+You cannot save changes to fstab until you make it writable.
+
+mount -o remount,rw /
+
+4. Fix the /etc/fstab File
+Open the file with a text editor (usually vi is the only one available in emergency mode):
+vi /etc/fstab
+
+5. Verify and Reboot
+Before you reboot, tell systemd to refresh its view of the world and try to mount everything. If this command returns no errors, you’ve fixed the problem:
+systemctl daemon-reload
+mount -a
+
+If mount -a succeeds without output, you are safe to reboot:
+reboot
+
+Note: Finding the Correct UUIDs
+blkid
+
+-------------------------------------------------------------------------------------------------------
+
+Setting a GRUB2 Password
+
+1. Create the Password
+grub2-setpassword
+
+2. Requiring a Password for Every Boot
+vi /etc/grub.d/10_linux
+
+#Look for the line that says 
+CLASS="--class gnu-linux ..."
+
+Remove the --unrestricted flag from that line.
+
+Regenerate the GRUB config:
+# For BIOS-based systems:
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+# For UEFI-based systems:
+grub2-mkconfig -o /boot/efi/EFI/redhat/grub.cfg
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

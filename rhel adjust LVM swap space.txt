@@ -1,0 +1,17 @@
+Identify your swap path:
+swapon --show
+
+# Usually looks like /dev/mapper/rhel-swap or /dev/vg_name/lv_swap
+
+Turn off swap:
+sudo swapoff -v /dev/mapper/rhel-swap
+
+Resize the Logical Volume:
+To add 2GB (use -L 4G to set it to exactly 4GB instead):
+sudo lvresize -L +2G /dev/mapper/rhel-swap
+
+Format the new space:
+sudo mkswap /dev/mapper/rhel-swap
+
+Re-enable swap:
+sudo swapon -v /dev/mapper/rhel-swap

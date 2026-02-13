@@ -1,0 +1,24 @@
+mkdir -p /mnt/oracle_iso
+mount -o loop /home/user/OL9.iso /mnt/oracle_iso
+
+vi /etc/yum.repos.d/local_oracle.repo
+
+[local_baseos]
+name=Oracle Linux Local BaseOS
+baseurl=file:///mnt/oracle_iso/BaseOS
+enabled=1
+gpgcheck=1
+gpgkey=file:///mnt/oracle_iso/RPM-GPG-KEY-oracle
+
+[local_appstream]
+name=Oracle Linux Local AppStream
+baseurl=file:///mnt/oracle_iso/AppStream
+enabled=1
+gpgcheck=1
+gpgkey=file:///mnt/oracle_iso/RPM-GPG-KEY-oracle
+
+dnf config-manager --set-disabled \*
+dnf config-manager --set-enabled local_baseos local_appstream
+dnf clean all
+dnf repolist
+Would you like me to show you how to use dnf module commands? (Since AppStream uses modules to manage different versions of software like Python 3.9 vs 3.11).
