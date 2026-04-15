@@ -1,0 +1,43 @@
+Samba share folder setup
+
+1. Install Samba Packages
+sudo dnf install samba samba-common samba-client
+
+2. Configure the Firewall
+sudo firewall-cmd --permanent --add-service=samba
+sudo firewall-cmd --reload
+
+3. Prepare the Shared Directory
+sudo mkdir -p /srv/samba/sharedfolder
+
+Set permissions: For a public share where everyone can read/write:
+sudo chmod -R 775 /srv/samba/sharedfolder
+sudo chown -R nobody:nobody /srv/samba/sharedfolder		#ito kulang ko, set it so nobody owns the folder
+
+4. Configure Samba (smb.conf)
+sudo nano /etc/samba/smb.conf
+
+[sharedfolder]
+    path = /srv/samba/sharedfolder
+    browsable = yes
+    writable = yes
+    guest ok = yes
+    read only = no
+    force user = nobody
+
+5. Assign samba password to your user(s)
+sudo smbpasswd -a john
+
+6. Start and Enable Services
+sudo systemctl enable --now smb nmb
+
+7. Accessing the Share
+From Windows: 
+\\<Your-Server-IP>\sharedfolder
+
+From Linux UI: 
+Use the "Connect to Server" option in your file manager with 
+smb://<Your-Server-IP>/sharedfolder
+
+From Command Line (Linux): 
+smbclient //<Your-Server-IP>/sharedfolder -U john
